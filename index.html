@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geburtstags-Dashboard</title>
     <style>
-        /* CSS ist unverändert */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background-color: #0c001f; color: #ffffff; overflow-x: hidden; }
@@ -18,9 +17,12 @@
         .tile-time .time-box { font-size: 1.5rem; font-weight: 500; }
         .tile-time .time-box span { display: block; font-size: 0.7rem; font-weight: 300; }
         .tile-birthday-text { display: none; font-size: 1.2rem; font-weight: 500; margin-top: 15px; }
+        
+        /* --- HIER IST DIE KORREKTUR --- */
         .countdown-tile.is-birthday { background: linear-gradient(45deg, #ff0077, #ff9100); transform: scale(1.05); box-shadow: 0 0 30px #ff0077; }
         .countdown-tile.is-birthday .tile-time { display: none; }
         .countdown-tile.is-birthday .tile-birthday-text { display: block; }
+        
         #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
         #add-new-button:hover { transform: scale(1.1); }
         #add-form-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
@@ -87,9 +89,8 @@
         window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
         animate(); setFireworksInterval();
 
-        // === DASHBOARD-LOGIK (neu aufgebaut) ===
+        // === DASHBOARD-LOGIK ===
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM-Elemente holen
             const grid = document.getElementById('countdown-grid');
             const tileTemplate = document.getElementById('countdown-tile-template');
             const addButton = document.getElementById('add-new-button');
@@ -100,19 +101,14 @@
             const formSubmitButton = document.getElementById('form-submit-button');
             const formDeleteButton = document.getElementById('form-delete');
 
-            // App-Status
             let countdownData = [];
             let editingTileId = null;
 
-            // --- DATENFUNKTIONEN ---
             const loadData = () => {
                 const data = localStorage.getItem('countdownDashboard');
                 let rawData = data ? JSON.parse(data) : [];
                 countdownData = rawData.map(item => {
-                    if (item.birthDate && !item.date) {
-                        item.date = item.birthDate;
-                        delete item.birthDate;
-                    }
+                    if (item.birthDate && !item.date) { item.date = item.birthDate; delete item.birthDate; }
                     return item;
                 });
             };
@@ -121,7 +117,6 @@
                 localStorage.setItem('countdownDashboard', JSON.stringify(countdownData));
             };
 
-            // --- FORMULAR-FUNKTIONEN ---
             const openAddForm = () => {
                 editingTileId = null;
                 form.reset();
@@ -149,7 +144,6 @@
                 formContainer.style.display = 'none';
             };
 
-            // --- RENDER- & UPDATE-FUNKTIONEN ---
             const getNextBirthdayInfo = (dateString) => {
                 if (!dateString) return { timestamp: NaN };
                 const date = new Date(dateString);
@@ -208,7 +202,6 @@
                 if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
             };
 
-            // --- EVENT LISTENERS ---
             addButton.addEventListener('click', openAddForm);
             formCancelButton.addEventListener('click', closeForm);
 
@@ -251,7 +244,6 @@
                 closeForm();
             });
 
-            // --- INITIALISIERUNG ---
             loadData();
             renderAllTiles();
             setInterval(updateAllTimers, 1000);
