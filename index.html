@@ -10,7 +10,7 @@
         body { font-family: 'Poppins', sans-serif; background-color: #0c001f; color: #ffffff; overflow-x: hidden; }
         #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
         #countdown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .countdown-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; text-align: center; backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .countdown-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; text-align: center; backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
         .countdown-tile:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .tile-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; }
         .tile-time { display: flex; justify-content: space-around; margin-bottom: 15px; }
@@ -22,53 +22,60 @@
         .countdown-tile.is-birthday .tile-birthday-text { display: block; }
         .countdown-tile.is-birthday .tile-name::after { content: ' 🥳'; }
         
-        /* NEU: Knopf zum Öffnen der Datenverwaltung */
-        #manage-data-button { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background-color: #8a2be2; color: white; border: none; border-radius: 25px; font-size: 1rem; font-weight: 500; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
-        #manage-data-button:hover { transform: scale(1.05); }
+        #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
+        #add-new-button:hover { transform: scale(1.1); }
 
-        /* NEU: Container für die Tabellenansicht */
-        #data-table-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .table-view-content { background: #1a043a; padding: 20px; border-radius: 15px; width: 95%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; }
-        .table-view-content h2 { text-align: center; margin-bottom: 15px; }
-        .table-wrapper { overflow-y: auto; }
-        #data-table { width: 100%; border-collapse: collapse; }
-        #data-table th, #data-table td { padding: 12px; border: 1px solid #4a2d6b; text-align: left; }
-        #data-table th { background-color: #2a104f; }
-        #data-table td[contenteditable="true"] { background-color: rgba(255,255,255,0.1); cursor: text; }
-        .table-controls { margin-top: 20px; display: flex; justify-content: space-between; }
-        .table-controls button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
-        #add-row-btn { background-color: #3b8d3b; color: white; }
-        .delete-row-btn { background-color: #c00; color: white; border: none; padding: 5px 8px; border-radius: 50%; cursor: pointer; }
-        #save-table-btn { background-color: #8a2be2; color: white; }
+        /* NEU: Allgemeiner Container für alle Pop-up-Fenster */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1a043a; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 450px; }
+        .modal-content h2 { margin-bottom: 10px; text-align: center; }
+        .modal-content label { font-size: 0.9rem; opacity: 0.8; }
+        .modal-content input, .modal-content textarea { width: 100%; padding: 12px; border: 1px solid #8a2be2; background: rgba(0,0,0,0.2); color: white; border-radius: 8px; font-family: inherit; }
+        .modal-content textarea { resize: vertical; min-height: 100px; }
+        .modal-content button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
+        .modal-content button.primary { background-color: #8a2be2; color: white; }
+        .modal-content button.secondary { background-color: #444; color: white; }
+        .modal-content button.delete-button { background-color: #c00; color: white; display: none; }
+        .modal-content button:hover { opacity: 0.9; }
+        .form-buttons { display: flex; gap: 10px; }
+        .form-buttons button { flex-grow: 1; }
     </style>
 </head>
 <body>
     <canvas id="fireworks-canvas"></canvas>
     <main id="countdown-grid"></main>
-    <button id="manage-data-button">Daten verwalten</button>
-    
-    <div id="data-table-container">
-        <div class="table-view-content">
-            <h2>Geburtstage verwalten</h2>
-            <div class="table-wrapper">
-                <table id="data-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Datum (TT.MM.JJJJ oder JJJJ-MM-TT)</th>
-                            <th>Nachricht</th>
-                            <th>Löschen</th>
-                        </tr>
-                    </thead>
-                    <tbody id="data-table-body">
-                        </tbody>
-                </table>
-            </div>
-            <div class="table-controls">
-                <button id="add-row-btn">+ Zeile hinzufügen</button>
-                <button id="save-table-btn">Speichern & Schließen</button>
-            </div>
+    <button id="add-new-button">+</button>
+
+    <div id="modal-container" class="modal-overlay">
+        
+        <div id="choice-dialog" class="modal-content">
+            <h2>Wie möchtest du hinzufügen?</h2>
+            <button id="show-single-form-btn" class="primary">Einzelnen Countdown</button>
+            <button id="show-bulk-form-btn" class="primary">Mehrere aus Tabelle importieren</button>
+            <button type="button" class="modal-cancel-btn secondary" style="margin-top: 10px;">Abbrechen</button>
         </div>
+
+        <form id="single-entry-form" class="modal-content" style="display: none;">
+             <h2 id="form-title">Countdown hinzufügen/bearbeiten</h2>
+             <input type="text" id="form-name" placeholder="Name" required>
+             <label for="form-date">Geburtstag</label>
+             <input type="date" id="form-date" required>
+             <input type="text" id="form-message" placeholder="Text am Geburtstag" required>
+             <div class="form-buttons">
+                 <button type="submit" id="form-submit-button" class="primary">Hinzufügen</button>
+                 <button type="button" id="form-delete" class="delete-button">Löschen</button>
+             </div>
+             <button type="button" class="modal-cancel-btn secondary">Abbrechen</button>
+        </form>
+
+        <div id="bulk-import-form" class="modal-content" style="display: none;">
+            <h2>Aus Tabelle importieren</h2>
+            <label for="bulk-import-area">Daten aus Excel, Sheets etc. hier einfügen:</label>
+            <textarea id="bulk-import-area" rows="8" placeholder="Spalten: Name, Datum, Nachricht"></textarea>
+            <button id="import-pasted-data" class="primary">Importieren</button>
+            <button type="button" class="modal-cancel-btn secondary">Abbrechen</button>
+        </div>
+
     </div>
 
     <template id="countdown-tile-template">
@@ -84,129 +91,124 @@
         window.addEventListener("resize",()=>{fireworksCanvas.width=window.innerWidth;fireworksCanvas.height=window.innerHeight});animateFireworks();setFireworksInterval();
 
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM-Elemente holen
             const grid = document.getElementById('countdown-grid');
             const tileTemplate = document.getElementById('countdown-tile-template');
-            const manageDataButton = document.getElementById('manage-data-button');
-            const dataTableContainer = document.getElementById('data-table-container');
-            const dataTableBody = document.getElementById('data-table-body');
-            const addRowBtn = document.getElementById('add-row-btn');
-            const saveTableBtn = document.getElementById('save-table-btn');
-
+            const addButton = document.getElementById('add-new-button');
+            const modalContainer = document.getElementById('modal-container');
+            const choiceDialog = document.getElementById('choice-dialog');
+            const singleEntryForm = document.getElementById('single-entry-form');
+            const bulkImportForm = document.getElementById('bulk-import-form');
+            const showSingleFormBtn = document.getElementById('show-single-form-btn');
+            const showBulkFormBtn = document.getElementById('show-bulk-form-btn');
+            const importPastedDataButton = document.getElementById('import-pasted-data');
             let countdownData = [];
+            let editingTileId = null;
+
             const loadData = () => { const data = localStorage.getItem('countdownDashboard'); let rawData = data ? JSON.parse(data) : []; countdownData = rawData.map(item => { if (item.birthDate && !item.date) { item.date = item.birthDate; delete item.birthDate; } return item; }); };
             const saveData = () => { localStorage.setItem('countdownDashboard', JSON.stringify(countdownData)); };
             const getNextBirthdayInfo = (dateString) => { if (!dateString) return { timestamp: NaN }; const date = new Date(dateString); const today = new Date(); today.setHours(0, 0, 0, 0); const currentYear = today.getFullYear(); let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate()); if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); } return { timestamp: nextBirthday.getTime() }; };
             
-            // --- DATEN-TABELLEN-LOGIK ---
-            const parseDateString = (dateStr) => {
-                if (!dateStr) return null;
-                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(dateStr);
-                const parts = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-                if (parts) return new Date(parts[3], parts[2] - 1, parts[1]);
-                const jsDate = new Date(dateStr);
-                return isNaN(jsDate) ? null : jsDate;
-            };
-
-            const openTableView = () => {
-                dataTableBody.innerHTML = ''; // Leere alte Zeilen
-                countdownData.forEach(item => {
-                    const row = dataTableBody.insertRow();
-                    row.innerHTML = `
-                        <td contenteditable="true">${item.name}</td>
-                        <td contenteditable="true">${item.date}</td>
-                        <td contenteditable="true">${item.message}</td>
-                        <td><button class="delete-row-btn">X</button></td>
-                    `;
-                });
-                dataTableContainer.style.display = 'flex';
-            };
-
-            const handleSaveTable = () => {
-                const newCountdownData = [];
-                const rows = dataTableBody.querySelectorAll('tr');
-                let failedRows = 0;
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    const name = cells[0].textContent.trim();
-                    const dateStr = cells[1].textContent.trim();
-                    const message = cells[2].textContent.trim();
-
-                    const parsedDate = parseDateString(dateStr);
-                    if (name && parsedDate) {
-                        const isoDate = parsedDate.toISOString().split('T')[0];
-                        newCountdownData.push({ id: Date.now() + Math.random(), name, date: isoDate, message: message || `Happy Birthday, ${name}!` });
-                    } else {
-                        failedRows++;
-                    }
-                });
-
-                if (failedRows > 0) {
-                    alert(`${failedRows} Zeile(n) konnte(n) nicht gespeichert werden, da der Name fehlte oder das Datumsformat ungültig war.`);
-                }
-                countdownData = newCountdownData;
-                saveData();
-                renderAllTiles();
-                dataTableContainer.style.display = 'none';
-            };
-
-            const handleAddRow = () => {
-                const row = dataTableBody.insertRow();
-                row.innerHTML = `
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td><button class="delete-row-btn">X</button></td>
-                `;
-            };
-
             const renderAllTiles = () => {
                 countdownData.forEach(item => item.nextBirthdayInfo = getNextBirthdayInfo(item.date));
                 countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp);
                 grid.innerHTML = '';
-                countdownData.forEach(item => {
-                    const tileClone = tileTemplate.content.cloneNode(true);
-                    const tileElement = tileClone.querySelector('.countdown-tile');
-                    tileElement.dataset.id = item.id;
-                    tileElement.querySelector('.tile-name').textContent = item.name;
-                    tileElement.querySelector('.tile-birthday-text').textContent = item.message;
-                    grid.appendChild(tileElement);
-                });
+                countdownData.forEach(item => { const tileClone = tileTemplate.content.cloneNode(true); const tileElement = tileClone.querySelector('.countdown-tile'); tileElement.dataset.id = item.id; tileElement.querySelector('.tile-name').textContent = item.name; tileElement.querySelector('.tile-birthday-text').textContent = item.message; grid.appendChild(tileElement); });
                 updateAllTimers();
             };
+            const updateAllTimers = () => { let birthdayIsHappening = false; document.querySelectorAll('.countdown-tile').forEach(tile => { const id = parseFloat(tile.dataset.id); const item = countdownData.find(d => d.id === id); if (!item || !item.nextBirthdayInfo) return; const now = new Date().getTime(); const distance = item.nextBirthdayInfo.timestamp - now; if (isNaN(distance)) return; const oneDayInMs = 864e5; if (distance < -oneDayInMs) { renderAllTiles(); return; } if (distance < 0) { tile.classList.add('is-birthday'); birthdayIsHappening = true; } else { tile.classList.remove('is-birthday'); const days = Math.floor(distance / oneDayInMs); const hours = Math.floor((distance % oneDayInMs) / 36e5); const minutes = Math.floor((distance % 36e5) / 6e4); const seconds = Math.floor((distance % 6e4) / 1e3); tile.querySelector('.days').textContent = days; tile.querySelector('.hours').textContent = hours; tile.querySelector('.minutes').textContent = minutes; tile.querySelector('.seconds').textContent = seconds; } }); const newIntensity = birthdayIsHappening ? 400 : 1500; if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); } };
 
-            const updateAllTimers = () => {
-                let birthdayIsHappening = false;
-                document.querySelectorAll('.countdown-tile').forEach(tile => {
-                    const id = parseFloat(tile.dataset.id); // parseFloat to handle potential random number
-                    const item = countdownData.find(d => d.id === id);
-                    if (!item || !item.nextBirthdayInfo) return;
-                    const now = new Date().getTime(); const distance = item.nextBirthdayInfo.timestamp - now;
-                    if (isNaN(distance)) return;
-                    const oneDayInMs = 864e5;
-                    if (distance < -oneDayInMs) { renderAllTiles(); return; }
-                    if (distance < 0) { tile.classList.add('is-birthday'); birthdayIsHappening = true; } else {
-                        tile.classList.remove('is-birthday');
-                        const days = Math.floor(distance / oneDayInMs); const hours = Math.floor((distance % oneDayInMs) / 36e5); const minutes = Math.floor((distance % 36e5) / 6e4); const seconds = Math.floor((distance % 6e4) / 1e3);
-                        tile.querySelector('.days').textContent = days; tile.querySelector('.hours').textContent = hours; tile.querySelector('.minutes').textContent = minutes; tile.querySelector('.seconds').textContent = seconds;
-                    }
-                });
-                const newIntensity = birthdayIsHappening ? 400 : 1500;
-                if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
+            const showModal = (view) => {
+                choiceDialog.style.display = view === 'choice' ? 'flex' : 'none';
+                singleEntryForm.style.display = view === 'single' ? 'flex' : 'none';
+                bulkImportForm.style.display = view === 'bulk' ? 'flex' : 'none';
+                modalContainer.style.display = 'flex';
+            };
+            const closeModal = () => { modalContainer.style.display = 'none'; };
+
+            const openEditForm = (id) => {
+                const item = countdownData.find(d => d.id === id);
+                if (!item) return;
+                editingTileId = id;
+                const form = singleEntryForm;
+                form.reset();
+                form.querySelector('#form-title').textContent = 'Countdown bearbeiten';
+                form.querySelector('#form-submit-button').textContent = 'Speichern';
+                form.querySelector('#form-name').value = item.name;
+                form.querySelector('#form-date').value = item.date;
+                form.querySelector('#form-message').value = item.message;
+                form.querySelector('#form-delete').style.display = 'block';
+                showModal('single');
             };
             
-            // --- EVENT LISTENERS ---
-            manageDataButton.addEventListener('click', openTableView);
-            saveTableBtn.addEventListener('click', handleSaveTable);
-            addRowBtn.addEventListener('click', handleAddRow);
-            // Delegierter Event Listener für die Löschen-Knöpfe
-            dataTableBody.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-row-btn')) {
-                    e.target.closest('tr').remove();
+            const parseDateString = (dateStr) => { if (!dateStr) return null; if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(dateStr); const parts = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); if (parts) return new Date(parts[3], parts[2] - 1, parts[1]); const jsDate = new Date(dateStr); return isNaN(jsDate) ? null : jsDate; };
+
+            // --- Event Listeners ---
+            addButton.addEventListener('click', () => showModal('choice'));
+            showSingleFormBtn.addEventListener('click', () => {
+                editingTileId = null;
+                singleEntryForm.reset();
+                singleEntryForm.querySelector('#form-title').textContent = 'Neuen Countdown hinzufügen';
+                singleEntryForm.querySelector('#form-submit-button').textContent = 'Hinzufügen';
+                singleEntryForm.querySelector('#form-delete').style.display = 'none';
+                showModal('single');
+            });
+            showBulkFormBtn.addEventListener('click', () => showModal('bulk'));
+            document.querySelectorAll('.modal-cancel-btn').forEach(btn => btn.addEventListener('click', closeModal));
+
+            grid.addEventListener('click', (e) => { const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseFloat(tile.dataset.id)); });
+            grid.addEventListener('contextmenu', (e) => { e.preventDefault(); const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseFloat(tile.dataset.id)); });
+            
+            singleEntryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('form-name').value;
+                const date = document.getElementById('form-date').value;
+                const message = document.getElementById('form-message').value;
+                if (!name || !date) { alert("Bitte fülle mindestens Name und Datum aus."); return; }
+                const finalMessage = message || `Happy Birthday, ${name}!`;
+
+                if (editingTileId) {
+                    const item = countdownData.find(d => d.id === editingTileId);
+                    if (item) { item.name = name; item.date = date; item.message = finalMessage; }
+                } else {
+                    countdownData.push({ id: Date.now(), name, date, message: finalMessage });
+                }
+                saveData(); renderAllTiles(); closeModal();
+            });
+
+            singleEntryForm.querySelector('#form-delete').addEventListener('click', () => {
+                if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
+                    countdownData = countdownData.filter(item => item.id !== editingTileId);
+                    saveData(); renderAllTiles(); closeModal();
                 }
             });
-            
-            // Initialisierung
+
+            importPastedDataButton.addEventListener('click', () => {
+                const text = document.getElementById('bulk-import-area').value;
+                if (!text) return;
+                const rows = text.split('\n').filter(row => row.trim() !== '');
+                let importedCount = 0; let skippedCount = 0;
+                rows.forEach(row => {
+                    const columns = row.split('\t');
+                    const name = columns[0] ? columns[0].trim() : '';
+                    const dateStr = columns[1] ? columns[1].trim() : '';
+                    const message = columns[2] ? columns[2].trim() : `Happy Birthday, ${name}!`;
+                    const parsedDate = parseDateString(dateStr);
+                    if (name && parsedDate) {
+                        const isoDate = parsedDate.toISOString().split('T')[0];
+                        countdownData.push({ id: Date.now() + Math.random(), name, date: isoDate, message });
+                        importedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                });
+                if (importedCount > 0) { saveData(); renderAllTiles(); }
+                let alertMessage = `${importedCount} Einträge erfolgreich importiert!`;
+                if (skippedCount > 0) { alertMessage += `\n${skippedCount} Zeilen wurden übersprungen (ungültiges Datum/fehlender Name).`; }
+                alert(alertMessage);
+                closeModal();
+            });
+
+            // --- Initialisierung ---
             loadData();
             renderAllTiles();
             setInterval(updateAllTimers, 1000);
