@@ -53,13 +53,7 @@
         .tile-name {
             font-size: 1.8rem;
             font-weight: 700;
-        }
-
-        .tile-age {
-            font-size: 1rem;
-            font-weight: 300;
-            margin-bottom: 15px;
-            opacity: 0.8;
+            margin-bottom: 15px; /* Angepasst, da Alter wegfällt */
         }
         
         .tile-time {
@@ -149,6 +143,7 @@
         }
 
         #add-form h2 { margin-bottom: 10px; }
+        #add-form label { font-size: 0.9rem; opacity: 0.8; }
         #add-form input {
             width: 100%;
             padding: 12px;
@@ -166,7 +161,7 @@
             font-weight: 700;
             transition: background-color 0.2s;
         }
-        #add-form button[type="submit"] { background-color: #8a2be2; color: white; }
+        #add-form button[type="submit"] { background-color: #8a2be2; color: white; margin-top: 10px; }
         #add-form button[type="button"] { background-color: #444; color: white; }
         #add-form button:hover { opacity: 0.9; }
 
@@ -184,7 +179,10 @@
         <form id="add-form">
             <h2>Neuen Countdown hinzufügen</h2>
             <input type="text" id="form-name" placeholder="Name" required>
-            <input type="date" id="form-birthdate" required>
+            
+            <label for="form-date">Geburtstag (Tag & Monat)</label>
+            <input type="date" id="form-date" required>
+
             <input type="text" id="form-message" placeholder="Text am Geburtstag" required>
             <button type="submit">Hinzufügen</button>
             <button type="button" id="form-cancel">Abbrechen</button>
@@ -194,7 +192,6 @@
     <template id="countdown-tile-template">
         <div class="countdown-tile">
             <h3 class="tile-name"></h3>
-            <p class="tile-age"></p>
             <div class="tile-time">
                 <div class="time-box"><span class="days">0</span><span>Tage</span></div>
                 <div class="time-box"><span class="hours">0</span><span>Stunden</span></div>
@@ -207,7 +204,7 @@
 
 
     <script>
-        // === FEUERWERK-LOGIK (leicht angepasst) ===
+        // === FEUERWERK-LOGIK (unverändert) ===
         const canvas = document.getElementById('fireworks-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
@@ -229,7 +226,7 @@
         setFireworksInterval();
 
 
-        // === NEUE DASHBOARD-LOGIK ===
+        // === DASHBOARD-LOGIK ===
         const grid = document.getElementById('countdown-grid');
         const tileTemplate = document.getElementById('countdown-tile-template');
         const addButton = document.getElementById('add-new-button');
@@ -239,44 +236,41 @@
 
         let countdownData = [];
 
-        // Lade Daten aus dem localStorage
         function loadData() {
             const data = localStorage.getItem('countdownDashboard');
             countdownData = data ? JSON.parse(data) : [];
         }
 
-        // Speichere Daten und rendere die Kacheln neu
         function saveAndRender() {
             localStorage.setItem('countdownDashboard', JSON.stringify(countdownData));
             renderAllTiles();
         }
         
-        // Berechne den nächsten Geburtstag und das Alter
-        function getNextBirthdayInfo(birthDateString) {
-            const birthDate = new Date(birthDateString);
+        // Berechne den nächsten Geburtstag (ohne Alter)
+        function getNextBirthdayInfo(dateString) {
+            const date = new Date(dateString);
             const today = new Date();
             const currentYear = today.getFullYear();
             
-            let nextBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+            // Setzt den Geburtstag auf das aktuelle Jahr, um den nächsten Termin zu finden
+            let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
+            
+            // Wenn der Geburtstag dieses Jahr schon war, nimm das nächste Jahr
             if (nextBirthday < today) {
                 nextBirthday.setFullYear(currentYear + 1);
             }
             
-            const age = nextBirthday.getFullYear() - birthDate.getFullYear();
-            return { timestamp: nextBirthday.getTime(), age: age };
+            return { timestamp: nextBirthday.getTime() };
         }
 
-        // Rendert alle Kacheln
         function renderAllTiles() {
-            // Berechne für jedes Item den nächsten Geburtstag, bevor sortiert wird
             countdownData.forEach(item => {
-                item.nextBirthdayInfo = getNextBirthdayInfo(item.birthDate);
+                item.nextBirthdayInfo = getNextBirthdayInfo(item.date);
             });
 
-            // Sortiere nach dem nächsten Geburtstag
             countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp);
 
-            grid.innerHTML = ''; // Leere das Grid
+            grid.innerHTML = ''; 
             
             countdownData.forEach(item => {
                 const tileClone = tileTemplate.content.cloneNode(true);
@@ -284,15 +278,13 @@
                 
                 tileElement.dataset.id = item.id;
                 tileElement.querySelector('.tile-name').textContent = item.name;
-                tileElement.querySelector('.tile-age').textContent = `Wird ${item.nextBirthdayInfo.age} Jahre alt`;
                 tileElement.querySelector('.tile-birthday-text').textContent = item.message;
                 
                 grid.appendChild(tileClone);
             });
-            updateAllTimers(); // Initialisiere die Timer
+            updateAllTimers();
         }
 
-        // Aktualisiert alle Timer auf dem Bildschirm
         function updateAllTimers() {
             let birthdayIsHappening = false;
             document.querySelectorAll('.countdown-tile').forEach(tile => {
@@ -303,15 +295,12 @@
                 const now = new Date().getTime();
                 const distance = item.nextBirthdayInfo.timestamp - now;
                 
-                // Logik für nach dem Geburtstag
                 const oneDayInMs = 24 * 60 * 60 * 1000;
                 if (distance < -oneDayInMs) {
-                    // Geburtstag ist über einen Tag her, neu rendern um Zieldatum aufs nächste Jahr zu setzen
                     saveAndRender();
                     return;
                 }
 
-                // Logik für den Geburtstag
                 if (distance < 0) {
                     tile.classList.add('is-birthday');
                     birthdayIsHappening = true;
@@ -329,7 +318,6 @@
                 }
             });
             
-            // Feuerwerk-Intensität anpassen
             const newIntensity = birthdayIsHappening ? 400 : 1500;
             if (newIntensity !== fireworksIntensity) {
                 fireworksIntensity = newIntensity;
@@ -337,7 +325,6 @@
             }
         }
 
-        // Event-Handler für das Hinzufügen-Formular
         addButton.addEventListener('click', () => {
             formContainer.style.display = 'flex';
         });
@@ -349,18 +336,18 @@
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('form-name').value;
-            const birthDate = document.getElementById('form-birthdate').value;
+            const date = document.getElementById('form-date').value;
             const message = document.getElementById('form-message').value;
 
-            if (!name || !birthDate || !message) {
+            if (!name || !date || !message) {
                 alert('Bitte alle Felder ausfüllen!');
                 return;
             }
 
             countdownData.push({
-                id: Date.now(), // Eindeutige ID
+                id: Date.now(),
                 name,
-                birthDate,
+                date, // Speichert das Datum als 'YYYY-MM-DD' String
                 message
             });
             
@@ -368,7 +355,6 @@
             formContainer.style.display = 'none';
             saveAndRender();
         });
-
 
         // Initialisierung
         loadData();
