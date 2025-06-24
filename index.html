@@ -21,11 +21,8 @@
         .countdown-tile.is-birthday .tile-time { display: none; }
         .countdown-tile.is-birthday .tile-birthday-text { display: block; }
         .countdown-tile.is-birthday .tile-name::after { content: ' 🥳'; }
-        
         #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
         #add-new-button:hover { transform: scale(1.1); }
-
-        /* NEU: Allgemeiner Container für alle Pop-up-Fenster */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #1a043a; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 450px; }
         .modal-content h2 { margin-bottom: 10px; text-align: center; }
@@ -47,14 +44,12 @@
     <button id="add-new-button">+</button>
 
     <div id="modal-container" class="modal-overlay">
-        
         <div id="choice-dialog" class="modal-content">
             <h2>Wie möchtest du hinzufügen?</h2>
             <button id="show-single-form-btn" class="primary">Einzelnen Countdown</button>
             <button id="show-bulk-form-btn" class="primary">Mehrere aus Tabelle importieren</button>
             <button type="button" class="modal-cancel-btn secondary" style="margin-top: 10px;">Abbrechen</button>
         </div>
-
         <form id="single-entry-form" class="modal-content" style="display: none;">
              <h2 id="form-title">Countdown hinzufügen/bearbeiten</h2>
              <input type="text" id="form-name" placeholder="Name" required>
@@ -67,7 +62,6 @@
              </div>
              <button type="button" class="modal-cancel-btn secondary">Abbrechen</button>
         </form>
-
         <div id="bulk-import-form" class="modal-content" style="display: none;">
             <h2>Aus Tabelle importieren</h2>
             <label for="bulk-import-area">Daten aus Excel, Sheets etc. hier einfügen:</label>
@@ -75,7 +69,6 @@
             <button id="import-pasted-data" class="primary">Importieren</button>
             <button type="button" class="modal-cancel-btn secondary">Abbrechen</button>
         </div>
-
     </div>
 
     <template id="countdown-tile-template">
@@ -140,18 +133,32 @@
                 showModal('single');
             };
             
-            const parseDateString = (dateStr) => { if (!dateStr) return null; if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(dateStr); const parts = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); if (parts) return new Date(parts[3], parts[2] - 1, parts[1]); const jsDate = new Date(dateStr); return isNaN(jsDate) ? null : jsDate; };
+            // --- NEUE, ROBUSTERE DATUMS-LOGIK ---
+            const parseDateStringToISO = (dateStr) => {
+                if (!dateStr) return null;
+                const trimmedDateStr = dateStr.trim();
+                
+                // Prüft auf YYYY-MM-DD
+                if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDateStr)) {
+                    if (!isNaN(new Date(trimmedDateStr))) return trimmedDateStr;
+                }
+                
+                // Prüft auf TT.MM.JJJJ
+                const parts = trimmedDateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+                if (parts) {
+                    const day = parts[1].padStart(2, '0');
+                    const month = parts[2].padStart(2, '0');
+                    const year = parts[3];
+                    const isoDate = `${year}-${month}-${day}`;
+                    if (!isNaN(new Date(isoDate))) return isoDate;
+                }
 
-            // --- Event Listeners ---
+                return null; // Gibt null zurück, wenn kein bekanntes Format erkannt wird
+            };
+
+            // --- EVENT LISTENERS ---
             addButton.addEventListener('click', () => showModal('choice'));
-            showSingleFormBtn.addEventListener('click', () => {
-                editingTileId = null;
-                singleEntryForm.reset();
-                singleEntryForm.querySelector('#form-title').textContent = 'Neuen Countdown hinzufügen';
-                singleEntryForm.querySelector('#form-submit-button').textContent = 'Hinzufügen';
-                singleEntryForm.querySelector('#form-delete').style.display = 'none';
-                showModal('single');
-            });
+            showSingleFormBtn.addEventListener('click', () => { editingTileId = null; singleEntryForm.reset(); singleEntryForm.querySelector('#form-title').textContent = 'Neuen Countdown hinzufügen'; singleEntryForm.querySelector('#form-submit-button').textContent = 'Hinzufügen'; singleEntryForm.querySelector('#form-delete').style.display = 'none'; showModal('single'); });
             showBulkFormBtn.addEventListener('click', () => showModal('bulk'));
             document.querySelectorAll('.modal-cancel-btn').forEach(btn => btn.addEventListener('click', closeModal));
 
@@ -166,21 +173,12 @@
                 if (!name || !date) { alert("Bitte fülle mindestens Name und Datum aus."); return; }
                 const finalMessage = message || `Happy Birthday, ${name}!`;
 
-                if (editingTileId) {
-                    const item = countdownData.find(d => d.id === editingTileId);
-                    if (item) { item.name = name; item.date = date; item.message = finalMessage; }
-                } else {
-                    countdownData.push({ id: Date.now(), name, date, message: finalMessage });
-                }
+                if (editingTileId) { const item = countdownData.find(d => d.id === editingTileId); if (item) { item.name = name; item.date = date; item.message = finalMessage; } } 
+                else { countdownData.push({ id: Date.now(), name, date, message: finalMessage }); }
                 saveData(); renderAllTiles(); closeModal();
             });
 
-            singleEntryForm.querySelector('#form-delete').addEventListener('click', () => {
-                if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
-                    countdownData = countdownData.filter(item => item.id !== editingTileId);
-                    saveData(); renderAllTiles(); closeModal();
-                }
-            });
+            singleEntryForm.querySelector('#form-delete').addEventListener('click', () => { if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) { countdownData = countdownData.filter(item => item.id !== editingTileId); saveData(); renderAllTiles(); closeModal(); } });
 
             importPastedDataButton.addEventListener('click', () => {
                 const text = document.getElementById('bulk-import-area').value;
@@ -192,9 +190,10 @@
                     const name = columns[0] ? columns[0].trim() : '';
                     const dateStr = columns[1] ? columns[1].trim() : '';
                     const message = columns[2] ? columns[2].trim() : `Happy Birthday, ${name}!`;
-                    const parsedDate = parseDateString(dateStr);
-                    if (name && parsedDate) {
-                        const isoDate = parsedDate.toISOString().split('T')[0];
+                    
+                    const isoDate = parseDateStringToISO(dateStr); // Benutzt die neue Funktion
+
+                    if (name && isoDate) {
                         countdownData.push({ id: Date.now() + Math.random(), name, date: isoDate, message });
                         importedCount++;
                     } else {
@@ -203,12 +202,11 @@
                 });
                 if (importedCount > 0) { saveData(); renderAllTiles(); }
                 let alertMessage = `${importedCount} Einträge erfolgreich importiert!`;
-                if (skippedCount > 0) { alertMessage += `\n${skippedCount} Zeilen wurden übersprungen (ungültiges Datum/fehlender Name).`; }
+                if (skippedCount > 0) { alertMessage += `\n${skippedCount} Zeilen wurden übersprungen (ungültiges Datum oder fehlender Name).`; }
                 alert(alertMessage);
                 closeModal();
             });
 
-            // --- Initialisierung ---
             loadData();
             renderAllTiles();
             setInterval(updateAllTimers, 1000);
