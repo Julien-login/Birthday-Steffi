@@ -5,184 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geburtstags-Dashboard</title>
     <style>
-        /* Grundlegende Stile */
+        /* CSS ist unverändert */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #0c001f; 
-            color: #ffffff; 
-            overflow-x: hidden;
-        }
-        
-        #fireworks-canvas { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: -1; 
-        }
-
-        /* Haupt-Container für die Kacheln */
-        #countdown-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        /* Stil einer einzelnen Kachel */
-        .countdown-tile {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .countdown-tile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
-        .tile-name {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 15px; /* Angepasst, da Alter wegfällt */
-        }
-        
-        .tile-time {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 15px;
-        }
-
-        .tile-time .time-box {
-            font-size: 1.5rem;
-            font-weight: 500;
-        }
-
-        .tile-time .time-box span {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 300;
-        }
-        
-        .tile-birthday-text {
-            display: none; /* Wird nur am Geburtstag gezeigt */
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-top: 15px;
-        }
-
-        /* Spezieller Stil für die Geburtstagskachel */
-        .countdown-tile.is-birthday {
-            background: linear-gradient(45deg, #ff0077, #ff9100);
-            transform: scale(1.05);
-            box-shadow: 0 0 30px #ff0077;
-        }
-        
-        .countdown-tile.is-birthday .tile-time {
-            display: none;
-        }
-        
-        .countdown-tile.is-birthday .tile-birthday-text {
-            display: block;
-        }
-
-        /* "Hinzufügen"-Knopf und Formular */
-        #add-new-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background-color: #8a2be2;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            font-size: 2.5rem;
-            line-height: 60px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: transform 0.2s ease;
-            z-index: 1001;
-        }
-
-        #add-new-button:hover {
-            transform: scale(1.1);
-        }
-
-        #add-form-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none; /* Standardmäßig versteckt */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        #add-form {
-            background: #1a043a;
-            padding: 30px;
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 90%;
-            max-width: 400px;
-        }
-
+        body { font-family: 'Poppins', sans-serif; background-color: #0c001f; color: #ffffff; overflow-x: hidden; }
+        #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #countdown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        .countdown-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; text-align: center; backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .countdown-tile:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .tile-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; }
+        .tile-time { display: flex; justify-content: space-around; margin-bottom: 15px; }
+        .tile-time .time-box { font-size: 1.5rem; font-weight: 500; }
+        .tile-time .time-box span { display: block; font-size: 0.7rem; font-weight: 300; }
+        .tile-birthday-text { display: none; font-size: 1.2rem; font-weight: 500; margin-top: 15px; }
+        .countdown-tile.is-birthday { background: linear-gradient(45deg, #ff0077, #ff9100); transform: scale(1.05); box-shadow: 0 0 30px #ff0077; }
+        .countdown-tile.is-birthday .tile-time { display: none; }
+        .countdown-tile.is-birthday .tile-birthday-text { display: block; }
+        #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
+        #add-new-button:hover { transform: scale(1.1); }
+        #add-form-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        #add-form { background: #1a043a; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 400px; }
         #add-form h2 { margin-bottom: 10px; }
         #add-form label { font-size: 0.9rem; opacity: 0.8; }
-        #add-form input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #8a2be2;
-            background: rgba(0,0,0,0.2);
-            color: white;
-            border-radius: 8px;
-            font-family: inherit;
-        }
-        #add-form button {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 700;
-            transition: background-color 0.2s;
-        }
+        #add-form input { width: 100%; padding: 12px; border: 1px solid #8a2be2; background: rgba(0,0,0,0.2); color: white; border-radius: 8px; font-family: inherit; }
+        #add-form button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: background-color 0.2s; }
         #add-form button[type="submit"] { background-color: #8a2be2; color: white; margin-top: 10px; }
         #add-form button[type="button"] { background-color: #444; color: white; }
         #add-form button:hover { opacity: 0.9; }
-
     </style>
 </head>
 <body>
 
     <canvas id="fireworks-canvas"></canvas>
-
     <main id="countdown-grid"></main>
-
     <button id="add-new-button">+</button>
 
     <div id="add-form-container">
         <form id="add-form">
             <h2>Neuen Countdown hinzufügen</h2>
             <input type="text" id="form-name" placeholder="Name" required>
-            
             <label for="form-date">Geburtstag (Tag & Monat)</label>
             <input type="date" id="form-date" required>
-
             <input type="text" id="form-message" placeholder="Text am Geburtstag" required>
             <button type="submit">Hinzufügen</button>
             <button type="button" id="form-cancel">Abbrechen</button>
@@ -202,29 +65,19 @@
         </div>
     </template>
 
-
     <script>
         // === FEUERWERK-LOGIK (unverändert) ===
         const canvas = document.getElementById('fireworks-canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        let fireworks = []; let particles = [];
-        let fireworksIntensity = 1500; // Normal intensity
-
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        let fireworks = []; let particles = []; let fireworksIntensity = 1500;
         function Particle(x,y,c,v){this.x=x;this.y=y;this.color=c;this.velocity=v;this.alpha=1;this.life=Math.random()*30+60;this.update=()=>{this.x+=this.velocity.x;this.y+=this.velocity.y;this.velocity.y+=0.02;this.alpha-=0.015;this.life--};this.draw=()=>{ctx.save();ctx.globalAlpha=this.alpha;ctx.beginPath();ctx.arc(this.x,this.y,2,0,Math.PI*2,false);ctx.fillStyle=this.color;ctx.fill();ctx.restore()}}
         function Firework(x,y,tx,ty){this.x=x;this.y=y;this.targetX=tx;this.targetY=ty;const a=Math.atan2(ty-y,tx-x);const s=10;this.velocity={x:Math.cos(a)*s,y:Math.sin(a)*s};this.color=`hsl(${Math.random()*360}, 100%, 50%)`;this.update=()=>{const d=Math.hypot(this.targetX-this.x,this.targetY-this.y);if(d<s){for(let i=0;i<50;i++){const a=Math.random()*Math.PI*2;const s=Math.random()*5;particles.push(new Particle(this.x,this.y,this.color,{x:Math.cos(a)*s,y:Math.sin(a)*s}))}return true}else{this.x+=this.velocity.x;this.y+=this.velocity.y;this.velocity.y*=0.99}return false};this.draw=()=>{ctx.beginPath();ctx.arc(this.x,this.y,3,0,Math.PI*2,false);ctx.fillStyle=this.color;ctx.fill()}}
         function launchFirework(){const sx=canvas.width/2;const sy=canvas.height;const tx=Math.random()*canvas.width;const ty=Math.random()*canvas.height/2;fireworks.push(new Firework(sx,sy,tx,ty))}
-        let launchInterval;
-        function setFireworksInterval() {
-            if (launchInterval) clearInterval(launchInterval);
-            launchInterval = setInterval(launchFirework, fireworksIntensity);
-        }
+        let launchInterval; function setFireworksInterval(){if(launchInterval)clearInterval(launchInterval);launchInterval=setInterval(launchFirework,fireworksIntensity)}
         function animate(){requestAnimationFrame(animate);ctx.fillStyle='rgba(12,0,31,0.15)';ctx.fillRect(0,0,canvas.width,canvas.height);fireworks.forEach((f,i)=>{if(f.update())fireworks.splice(i,1);else f.draw()});particles.forEach((p,i)=>{if(p.alpha<=0||p.life<=0)particles.splice(i,1);else{p.update();p.draw()}})}
         window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
-        animate();
-        setFireworksInterval();
-
+        animate(); setFireworksInterval();
 
         // === DASHBOARD-LOGIK ===
         const grid = document.getElementById('countdown-grid');
@@ -236,9 +89,19 @@
 
         let countdownData = [];
 
+        // ***** HIER IST DIE KORREKTUR *****
         function loadData() {
             const data = localStorage.getItem('countdownDashboard');
-            countdownData = data ? JSON.parse(data) : [];
+            let rawData = data ? JSON.parse(data) : [];
+
+            // Diese Schleife repariert alte Einträge, indem sie 'birthDate' in 'date' umbenennt.
+            countdownData = rawData.map(item => {
+                if (item.birthDate && !item.date) {
+                    item.date = item.birthDate;
+                    delete item.birthDate;
+                }
+                return item;
+            });
         }
 
         function saveAndRender() {
@@ -246,20 +109,15 @@
             renderAllTiles();
         }
         
-        // Berechne den nächsten Geburtstag (ohne Alter)
         function getNextBirthdayInfo(dateString) {
+            if (!dateString) return { timestamp: NaN }; // Sicherheitsabfrage
             const date = new Date(dateString);
             const today = new Date();
             const currentYear = today.getFullYear();
-            
-            // Setzt den Geburtstag auf das aktuelle Jahr, um den nächsten Termin zu finden
             let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
-            
-            // Wenn der Geburtstag dieses Jahr schon war, nimm das nächste Jahr
             if (nextBirthday < today) {
                 nextBirthday.setFullYear(currentYear + 1);
             }
-            
             return { timestamp: nextBirthday.getTime() };
         }
 
@@ -267,19 +125,14 @@
             countdownData.forEach(item => {
                 item.nextBirthdayInfo = getNextBirthdayInfo(item.date);
             });
-
             countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp);
-
             grid.innerHTML = ''; 
-            
             countdownData.forEach(item => {
                 const tileClone = tileTemplate.content.cloneNode(true);
                 const tileElement = tileClone.querySelector('.countdown-tile');
-                
                 tileElement.dataset.id = item.id;
                 tileElement.querySelector('.tile-name').textContent = item.name;
                 tileElement.querySelector('.tile-birthday-text').textContent = item.message;
-                
                 grid.appendChild(tileClone);
             });
             updateAllTimers();
@@ -290,15 +143,16 @@
             document.querySelectorAll('.countdown-tile').forEach(tile => {
                 const id = parseInt(tile.dataset.id);
                 const item = countdownData.find(d => d.id === id);
-                if (!item) return;
+                if (!item || !item.nextBirthdayInfo) return;
 
                 const now = new Date().getTime();
                 const distance = item.nextBirthdayInfo.timestamp - now;
                 
+                if (isNaN(distance)) return; // Verhindert, dass NaN angezeigt wird
+
                 const oneDayInMs = 24 * 60 * 60 * 1000;
                 if (distance < -oneDayInMs) {
-                    saveAndRender();
-                    return;
+                    saveAndRender(); return;
                 }
 
                 if (distance < 0) {
@@ -306,18 +160,16 @@
                     birthdayIsHappening = true;
                 } else {
                     tile.classList.remove('is-birthday');
-                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const days = Math.floor(distance / oneDayInMs);
+                    const hours = Math.floor((distance % oneDayInMs) / (1000 * 60 * 60));
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    
                     tile.querySelector('.days').textContent = days;
                     tile.querySelector('.hours').textContent = hours;
                     tile.querySelector('.minutes').textContent = minutes;
                     tile.querySelector('.seconds').textContent = seconds;
                 }
             });
-            
             const newIntensity = birthdayIsHappening ? 400 : 1500;
             if (newIntensity !== fireworksIntensity) {
                 fireworksIntensity = newIntensity;
@@ -325,32 +177,15 @@
             }
         }
 
-        addButton.addEventListener('click', () => {
-            formContainer.style.display = 'flex';
-        });
-
-        formCancelButton.addEventListener('click', () => {
-            formContainer.style.display = 'none';
-        });
-
+        addButton.addEventListener('click', () => { formContainer.style.display = 'flex'; });
+        formCancelButton.addEventListener('click', () => { formContainer.style.display = 'none'; });
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('form-name').value;
             const date = document.getElementById('form-date').value;
             const message = document.getElementById('form-message').value;
-
-            if (!name || !date || !message) {
-                alert('Bitte alle Felder ausfüllen!');
-                return;
-            }
-
-            countdownData.push({
-                id: Date.now(),
-                name,
-                date, // Speichert das Datum als 'YYYY-MM-DD' String
-                message
-            });
-            
+            if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
+            countdownData.push({ id: Date.now(), name, date, message });
             form.reset();
             formContainer.style.display = 'none';
             saveAndRender();
