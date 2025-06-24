@@ -70,169 +70,192 @@
     </template>
 
     <script>
-        // === FEUERWERK-LOGIK (unverändert) ===
-        const canvas=document.getElementById('fireworks-canvas');const ctx=canvas.getContext('2d');canvas.width=window.innerWidth;canvas.height=window.innerHeight;let fireworks=[];let particles=[];let fireworksIntensity=1500;function Particle(x,y,c,v){this.x=x;this.y=y;this.color=c;this.velocity=v;this.alpha=1;this.life=Math.random()*30+60;this.update=()=>{this.x+=this.velocity.x;this.y+=this.velocity.y;this.velocity.y+=0.02;this.alpha-=0.015;this.life--};this.draw=()=>{ctx.save();ctx.globalAlpha=this.alpha;ctx.beginPath();ctx.arc(this.x,this.y,2,0,Math.PI*2,!1);ctx.fillStyle=this.color;ctx.fill();ctx.restore()}}
-        function Firework(x,y,tx,ty){this.x=x;this.y=y;this.targetX=tx;this.targetY=ty;const a=Math.atan2(ty-y,tx-x),s=10;this.velocity={x:Math.cos(a)*s,y:Math.sin(a)*s};this.color=`hsl(${360*Math.random()}, 100%, 50%)`;this.update=()=>{const d=Math.hypot(this.targetX-this.x,this.targetY-this.y);if(d<s){for(let i=0;i<50;i++){const a=2*Math.PI*Math.random(),s=5*Math.random();particles.push(new Particle(this.x,this.y,this.color,{x:Math.cos(a)*s,y:Math.sin(a)*s}))}return!0}this.x+=this.velocity.x;this.y+=this.velocity.y;this.velocity.y*=.99;return!1};this.draw=()=>{ctx.beginPath();ctx.arc(this.x,this.y,3,0,2*Math.PI,!1);ctx.fillStyle=this.color;ctx.fill()}}
-        function launchFirework(){const sx=canvas.width/2,sy=canvas.height,tx=Math.random()*canvas.width,ty=Math.random()*canvas.height/2;fireworks.push(new Firework(sx,sy,tx,ty))}
-        let launchInterval;function setFireworksInterval(){clearInterval(launchInterval);launchInterval=setInterval(launchFirework,fireworksIntensity)}
-        function animate(){requestAnimationFrame(animate);ctx.fillStyle="rgba(12, 0, 31, 0.15)";ctx.fillRect(0,0,canvas.width,canvas.height);fireworks.forEach((f,i)=>{f.update()?fireworks.splice(i,1):f.draw()});particles.forEach((p,i)=>{p.alpha<=0||p.life<=0?particles.splice(i,1):(p.update(),p.draw())})}
-        window.addEventListener("resize",()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});animate();setFireworksInterval();
+        // === FEUERWERK-LOGIK ===
+        const canvas = document.getElementById('fireworks-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let fireworks = [];
+        let particles = [];
+        let fireworksIntensity = 1500;
 
-        // === DASHBOARD-LOGIK ===
-        const grid = document.getElementById('countdown-grid');
-        const tileTemplate = document.getElementById('countdown-tile-template');
-        const addButton = document.getElementById('add-new-button');
-        const formContainer = document.getElementById('add-form-container');
-        const form = document.getElementById('add-form');
-        const formCancelButton = document.getElementById('form-cancel');
-        const formTitle = document.getElementById('form-title');
-        const formSubmitButton = document.getElementById('form-submit-button');
-        const formDeleteButton = document.getElementById('form-delete');
+        function Particle(x, y, color, velocity) { this.x = x; this.y = y; this.color = color; this.velocity = velocity; this.alpha = 1; this.life = Math.random() * 30 + 60; this.update = () => { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y += 0.02; this.alpha -= 0.015; this.life--; }; this.draw = () => { ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill(); ctx.restore(); }; }
+        function Firework(x, y, targetX, targetY) { this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY; const angle = Math.atan2(targetY - y, targetX - x); const speed = 10; this.velocity = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }; this.color = `hsl(${Math.random() * 360}, 100%, 50%)`; this.update = () => { const distance = Math.hypot(this.targetX - this.x, this.targetY - this.y); if (distance < speed) { for (let i = 0; i < 50; i++) { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 5; particles.push(new Particle(this.x, this.y, this.color, { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed })); } return true; } else { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y *= 0.99; } return false; }; this.draw = () => { ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill(); }; }
+        function launchFirework() { const startX = canvas.width / 2; const startY = canvas.height; const targetX = Math.random() * canvas.width; const targetY = Math.random() * canvas.height / 2; fireworks.push(new Firework(startX, startY, targetX, targetY)); }
+        let launchInterval; function setFireworksInterval() { if (launchInterval) clearInterval(launchInterval); launchInterval = setInterval(launchFirework, fireworksIntensity); }
+        function animate() { requestAnimationFrame(animate); ctx.fillStyle = 'rgba(12, 0, 31, 0.15)'; ctx.fillRect(0, 0, canvas.width, canvas.height); fireworks.forEach((f, i) => { if (f.update()) fireworks.splice(i, 1); else f.draw(); }); particles.forEach((p, i) => { if (p.alpha <= 0 || p.life <= 0) particles.splice(i, 1); else { p.update(); p.draw(); } }); }
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        animate(); setFireworksInterval();
 
-        let countdownData = [];
-        let editingTileId = null;
+        // === DASHBOARD-LOGIK (neu aufgebaut) ===
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM-Elemente holen
+            const grid = document.getElementById('countdown-grid');
+            const tileTemplate = document.getElementById('countdown-tile-template');
+            const addButton = document.getElementById('add-new-button');
+            const formContainer = document.getElementById('add-form-container');
+            const form = document.getElementById('add-form');
+            const formCancelButton = document.getElementById('form-cancel');
+            const formTitle = document.getElementById('form-title');
+            const formSubmitButton = document.getElementById('form-submit-button');
+            const formDeleteButton = document.getElementById('form-delete');
 
-        function loadData() {
-            const data = localStorage.getItem('countdownDashboard');
-            let rawData = data ? JSON.parse(data) : [];
-            countdownData = rawData.map(item => {
-                if (item.birthDate && !item.date) { item.date = item.birthDate; delete item.birthDate; }
-                return item;
-            });
-        }
+            // App-Status
+            let countdownData = [];
+            let editingTileId = null;
 
-        function saveAndRender() {
-            localStorage.setItem('countdownDashboard', JSON.stringify(countdownData));
-            renderAllTiles();
-        }
-        
-        function getNextBirthdayInfo(dateString) {
-            if (!dateString) return { timestamp: NaN };
-            const date = new Date(dateString);
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
-            if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); }
-            return { timestamp: nextBirthday.getTime() };
-        }
+            // --- DATENFUNKTIONEN ---
+            const loadData = () => {
+                const data = localStorage.getItem('countdownDashboard');
+                let rawData = data ? JSON.parse(data) : [];
+                countdownData = rawData.map(item => {
+                    if (item.birthDate && !item.date) {
+                        item.date = item.birthDate;
+                        delete item.birthDate;
+                    }
+                    return item;
+                });
+            };
 
-        // --- NEUE, SAUBERE FUNKTIONEN FÜR DAS FORMULAR ---
-        function openAddForm() {
-            editingTileId = null;
-            form.reset();
-            formTitle.textContent = 'Neuen Countdown hinzufügen';
-            formSubmitButton.textContent = 'Hinzufügen';
-            formDeleteButton.style.display = 'none';
-            formContainer.style.display = 'flex';
-        }
-        
-        function openEditForm(id) {
-            const item = countdownData.find(d => d.id === id);
-            if (!item) return;
-            editingTileId = id;
-            form.reset();
-            formTitle.textContent = 'Countdown bearbeiten';
-            formSubmitButton.textContent = 'Speichern';
-            document.getElementById('form-name').value = item.name;
-            document.getElementById('form-date').value = item.date;
-            document.getElementById('form-message').value = item.message;
-            formDeleteButton.style.display = 'block';
-            formContainer.style.display = 'flex';
-        }
+            const saveData = () => {
+                localStorage.setItem('countdownDashboard', JSON.stringify(countdownData));
+            };
 
-        function closeForm() {
-            formContainer.style.display = 'none';
-        }
+            // --- FORMULAR-FUNKTIONEN ---
+            const openAddForm = () => {
+                editingTileId = null;
+                form.reset();
+                formTitle.textContent = 'Neuen Countdown hinzufügen';
+                formSubmitButton.textContent = 'Hinzufügen';
+                formDeleteButton.style.display = 'none';
+                formContainer.style.display = 'flex';
+            };
 
-        function renderAllTiles() {
-            countdownData.forEach(item => { item.nextBirthdayInfo = getNextBirthdayInfo(item.date); });
-            countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp);
-            grid.innerHTML = ''; 
-            countdownData.forEach(item => {
-                const tileClone = tileTemplate.content.cloneNode(true);
-                const tileElement = tileClone.querySelector('.countdown-tile');
-                tileElement.dataset.id = item.id;
-                tileElement.querySelector('.tile-name').textContent = item.name;
-                tileElement.querySelector('.tile-birthday-text').textContent = item.message;
-                grid.appendChild(tileClone);
-            });
-            updateAllTimers();
-        }
-
-        function updateAllTimers() {
-            let birthdayIsHappening = false;
-            document.querySelectorAll('.countdown-tile').forEach(tile => {
-                const id = parseInt(tile.dataset.id);
+            const openEditForm = (id) => {
                 const item = countdownData.find(d => d.id === id);
-                if (!item || !item.nextBirthdayInfo) return;
-                const now = new Date().getTime();
-                const distance = item.nextBirthdayInfo.timestamp - now;
-                if (isNaN(distance)) return;
-                const oneDayInMs = 24 * 60 * 60 * 1000;
-                if (distance < -oneDayInMs) { saveAndRender(); return; }
-                if (distance < 0) {
-                    tile.classList.add('is-birthday');
-                    birthdayIsHappening = true;
-                } else {
-                    tile.classList.remove('is-birthday');
-                    const days = Math.floor(distance / oneDayInMs);
-                    const hours = Math.floor((distance % oneDayInMs) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    tile.querySelector('.days').textContent = days;
-                    tile.querySelector('.hours').textContent = hours;
-                    tile.querySelector('.minutes').textContent = minutes;
-                    tile.querySelector('.seconds').textContent = seconds;
+                if (!item) return;
+                editingTileId = id;
+                form.reset();
+                formTitle.textContent = 'Countdown bearbeiten';
+                formSubmitButton.textContent = 'Speichern';
+                document.getElementById('form-name').value = item.name;
+                document.getElementById('form-date').value = item.date;
+                document.getElementById('form-message').value = item.message;
+                formDeleteButton.style.display = 'block';
+                formContainer.style.display = 'flex';
+            };
+
+            const closeForm = () => {
+                formContainer.style.display = 'none';
+            };
+
+            // --- RENDER- & UPDATE-FUNKTIONEN ---
+            const getNextBirthdayInfo = (dateString) => {
+                if (!dateString) return { timestamp: NaN };
+                const date = new Date(dateString);
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
+                if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); }
+                return { timestamp: nextBirthday.getTime() };
+            };
+
+            const renderAllTiles = () => {
+                countdownData.forEach(item => item.nextBirthdayInfo = getNextBirthdayInfo(item.date));
+                countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp);
+                grid.innerHTML = '';
+                countdownData.forEach(item => {
+                    const tileClone = tileTemplate.content.cloneNode(true);
+                    const tileElement = tileClone.querySelector('.countdown-tile');
+                    tileElement.dataset.id = item.id;
+                    tileElement.querySelector('.tile-name').textContent = item.name;
+                    tileElement.querySelector('.tile-birthday-text').textContent = item.message;
+                    grid.appendChild(tileElement);
+                });
+                updateAllTimers();
+            };
+
+            const updateAllTimers = () => {
+                let birthdayIsHappening = false;
+                document.querySelectorAll('.countdown-tile').forEach(tile => {
+                    const id = parseInt(tile.dataset.id);
+                    const item = countdownData.find(d => d.id === id);
+                    if (!item || !item.nextBirthdayInfo) return;
+
+                    const now = new Date().getTime();
+                    const distance = item.nextBirthdayInfo.timestamp - now;
+                    if (isNaN(distance)) return;
+
+                    const oneDayInMs = 24 * 60 * 60 * 1000;
+                    if (distance < -oneDayInMs) { renderAllTiles(); return; }
+
+                    if (distance < 0) {
+                        tile.classList.add('is-birthday');
+                        birthdayIsHappening = true;
+                    } else {
+                        tile.classList.remove('is-birthday');
+                        const days = Math.floor(distance / oneDayInMs);
+                        const hours = Math.floor((distance % oneDayInMs) / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        tile.querySelector('.days').textContent = days;
+                        tile.querySelector('.hours').textContent = hours;
+                        tile.querySelector('.minutes').textContent = minutes;
+                        tile.querySelector('.seconds').textContent = seconds;
+                    }
+                });
+                const newIntensity = birthdayIsHappening ? 400 : 1500;
+                if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
+            };
+
+            // --- EVENT LISTENERS ---
+            addButton.addEventListener('click', openAddForm);
+            formCancelButton.addEventListener('click', closeForm);
+
+            grid.addEventListener('click', (e) => {
+                const tile = e.target.closest('.countdown-tile');
+                if (tile) openEditForm(parseInt(tile.dataset.id));
+            });
+
+            grid.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const tile = e.target.closest('.countdown-tile');
+                if (tile) openEditForm(parseInt(tile.dataset.id));
+            });
+
+            formDeleteButton.addEventListener('click', () => {
+                if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
+                    countdownData = countdownData.filter(item => item.id !== editingTileId);
+                    saveData();
+                    renderAllTiles();
+                    closeForm();
                 }
             });
-            const newIntensity = birthdayIsHappening ? 400 : 1500;
-            if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
-        }
 
-        // --- EVENT LISTENERS ---
-        grid.addEventListener('click', (e) => {
-            const tile = e.target.closest('.countdown-tile');
-            if (tile) { openEditForm(parseInt(tile.dataset.id)); }
-        });
-        grid.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const tile = e.target.closest('.countdown-tile');
-            if (tile) { openEditForm(parseInt(tile.dataset.id)); }
-        });
-        
-        addButton.addEventListener('click', openAddForm);
-        formCancelButton.addEventListener('click', closeForm);
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('form-name').value;
+                const date = document.getElementById('form-date').value;
+                const message = document.getElementById('form-message').value;
+                if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
 
-        formDeleteButton.addEventListener('click', () => {
-            if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
-                countdownData = countdownData.filter(item => item.id !== editingTileId);
+                if (editingTileId) {
+                    const item = countdownData.find(d => d.id === editingTileId);
+                    if (item) { item.name = name; item.date = date; item.message = message; }
+                } else {
+                    countdownData.push({ id: Date.now(), name, date, message });
+                }
+                
+                saveData();
+                renderAllTiles();
                 closeForm();
-                saveAndRender();
-            }
+            });
+
+            // --- INITIALISIERUNG ---
+            loadData();
+            renderAllTiles();
+            setInterval(updateAllTimers, 1000);
         });
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('form-name').value;
-            const date = document.getElementById('form-date').value;
-            const message = document.getElementById('form-message').value;
-            if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
-
-            if (editingTileId) {
-                const item = countdownData.find(d => d.id === editingTileId);
-                item.name = name; item.date = date; item.message = message;
-            } else {
-                countdownData.push({ id: Date.now(), name, date, message });
-            }
-            
-            closeForm();
-            saveAndRender();
-        });
-
-        // Initialisierung
-        loadData();
-        renderAllTiles();
-        setInterval(updateAllTimers, 1000);
     </script>
 </body>
 </html>
