@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geburtstags-Dashboard</title>
     <style>
+        /* CSS ist unverändert */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background-color: #0c001f; color: #ffffff; overflow-x: hidden; }
@@ -17,12 +18,10 @@
         .tile-time .time-box { font-size: 1.5rem; font-weight: 500; }
         .tile-time .time-box span { display: block; font-size: 0.7rem; font-weight: 300; }
         .tile-birthday-text { display: none; font-size: 1.2rem; font-weight: 500; margin-top: 15px; }
-        
-        /* --- HIER IST DIE KORREKTUR --- */
         .countdown-tile.is-birthday { background: linear-gradient(45deg, #ff0077, #ff9100); transform: scale(1.05); box-shadow: 0 0 30px #ff0077; }
         .countdown-tile.is-birthday .tile-time { display: none; }
         .countdown-tile.is-birthday .tile-birthday-text { display: block; }
-        
+        .countdown-tile.is-birthday .tile-name::after { content: ' 🥳'; }
         #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
         #add-new-button:hover { transform: scale(1.1); }
         #add-form-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
@@ -42,7 +41,6 @@
     <canvas id="fireworks-canvas"></canvas>
     <main id="countdown-grid"></main>
     <button id="add-new-button">+</button>
-
     <div id="add-form-container">
         <form id="add-form">
             <h2 id="form-title">Neuen Countdown hinzufügen</h2>
@@ -57,7 +55,6 @@
             <button type="button" id="form-cancel">Abbrechen</button>
         </form>
     </div>
-    
     <template id="countdown-tile-template">
         <div class="countdown-tile">
             <h3 class="tile-name"></h3>
@@ -70,26 +67,22 @@
             <p class="tile-birthday-text"></p>
         </div>
     </template>
-
     <script>
-        // === FEUERWERK-LOGIK ===
-        const canvas = document.getElementById('fireworks-canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const fireworksCanvas = document.getElementById('fireworks-canvas');
+        const fireworksCtx = fireworksCanvas.getContext('2d');
+        fireworksCanvas.width = window.innerWidth;
+        fireworksCanvas.height = window.innerHeight;
         let fireworks = [];
         let particles = [];
         let fireworksIntensity = 1500;
-
-        function Particle(x, y, color, velocity) { this.x = x; this.y = y; this.color = color; this.velocity = velocity; this.alpha = 1; this.life = Math.random() * 30 + 60; this.update = () => { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y += 0.02; this.alpha -= 0.015; this.life--; }; this.draw = () => { ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill(); ctx.restore(); }; }
-        function Firework(x, y, targetX, targetY) { this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY; const angle = Math.atan2(targetY - y, targetX - x); const speed = 10; this.velocity = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }; this.color = `hsl(${Math.random() * 360}, 100%, 50%)`; this.update = () => { const distance = Math.hypot(this.targetX - this.x, this.targetY - this.y); if (distance < speed) { for (let i = 0; i < 50; i++) { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 5; particles.push(new Particle(this.x, this.y, this.color, { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed })); } return true; } else { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y *= 0.99; } return false; }; this.draw = () => { ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI * 2, false); ctx.fillStyle = this.color; ctx.fill(); }; }
-        function launchFirework() { const startX = canvas.width / 2; const startY = canvas.height; const targetX = Math.random() * canvas.width; const targetY = Math.random() * canvas.height / 2; fireworks.push(new Firework(startX, startY, targetX, targetY)); }
+        function Particle(x, y, color, velocity) { this.x = x; this.y = y; this.color = color; this.velocity = velocity; this.alpha = 1; this.life = Math.random() * 30 + 60; this.update = () => { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y += 0.02; this.alpha -= 0.015; this.life--; }; this.draw = () => { fireworksCtx.save(); fireworksCtx.globalAlpha = this.alpha; fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 2, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); fireworksCtx.restore(); }; }
+        function Firework(x, y, targetX, targetY) { this.x = x; this.y = y; this.targetX = targetX; this.targetY = targetY; const angle = Math.atan2(targetY - y, targetX - x); const speed = 10; this.velocity = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed }; this.color = `hsl(${Math.random() * 360}, 100%, 50%)`; this.update = () => { const distance = Math.hypot(this.targetX - this.x, this.targetY - this.y); if (distance < speed) { for (let i = 0; i < 50; i++) { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 5; particles.push(new Particle(this.x, this.y, this.color, { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed })); } return true; } else { this.x += this.velocity.x; this.y += this.velocity.y; this.velocity.y *= 0.99; } return false; }; this.draw = () => { fireworksCtx.beginPath(); fireworksCtx.arc(this.x, this.y, 3, 0, Math.PI * 2, false); fireworksCtx.fillStyle = this.color; fireworksCtx.fill(); }; }
+        function launchFirework() { const startX = fireworksCanvas.width / 2; const startY = fireworksCanvas.height; const targetX = Math.random() * fireworksCanvas.width; const targetY = Math.random() * fireworksCanvas.height / 2; fireworks.push(new Firework(startX, startY, targetX, targetY)); }
         let launchInterval; function setFireworksInterval() { if (launchInterval) clearInterval(launchInterval); launchInterval = setInterval(launchFirework, fireworksIntensity); }
-        function animate() { requestAnimationFrame(animate); ctx.fillStyle = 'rgba(12, 0, 31, 0.15)'; ctx.fillRect(0, 0, canvas.width, canvas.height); fireworks.forEach((f, i) => { if (f.update()) fireworks.splice(i, 1); else f.draw(); }); particles.forEach((p, i) => { if (p.alpha <= 0 || p.life <= 0) particles.splice(i, 1); else { p.update(); p.draw(); } }); }
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-        animate(); setFireworksInterval();
+        function animateFireworks() { requestAnimationFrame(animateFireworks); fireworksCtx.fillStyle = 'rgba(12, 0, 31, 0.15)'; fireworksCtx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height); fireworks.forEach((f, i) => { if (f.update()) fireworks.splice(i, 1); else f.draw(); }); particles.forEach((p, i) => { if (p.alpha <= 0 || p.life <= 0) particles.splice(i, 1); else { p.update(); p.draw(); } }); }
+        window.addEventListener('resize', () => { fireworksCanvas.width = window.innerWidth; fireworksCanvas.height = window.innerHeight; });
+        animateFireworks(); setFireworksInterval();
 
-        // === DASHBOARD-LOGIK ===
         document.addEventListener('DOMContentLoaded', () => {
             const grid = document.getElementById('countdown-grid');
             const tileTemplate = document.getElementById('countdown-tile-template');
@@ -100,7 +93,6 @@
             const formTitle = document.getElementById('form-title');
             const formSubmitButton = document.getElementById('form-submit-button');
             const formDeleteButton = document.getElementById('form-delete');
-
             let countdownData = [];
             let editingTileId = null;
 
@@ -112,45 +104,23 @@
                     return item;
                 });
             };
-
-            const saveData = () => {
-                localStorage.setItem('countdownDashboard', JSON.stringify(countdownData));
-            };
-
-            const openAddForm = () => {
-                editingTileId = null;
-                form.reset();
-                formTitle.textContent = 'Neuen Countdown hinzufügen';
-                formSubmitButton.textContent = 'Hinzufügen';
-                formDeleteButton.style.display = 'none';
-                formContainer.style.display = 'flex';
-            };
-
-            const openEditForm = (id) => {
-                const item = countdownData.find(d => d.id === id);
-                if (!item) return;
-                editingTileId = id;
-                form.reset();
-                formTitle.textContent = 'Countdown bearbeiten';
-                formSubmitButton.textContent = 'Speichern';
-                document.getElementById('form-name').value = item.name;
-                document.getElementById('form-date').value = item.date;
-                document.getElementById('form-message').value = item.message;
-                formDeleteButton.style.display = 'block';
-                formContainer.style.display = 'flex';
-            };
-
-            const closeForm = () => {
-                formContainer.style.display = 'none';
-            };
+            const saveData = () => { localStorage.setItem('countdownDashboard', JSON.stringify(countdownData)); };
+            const openAddForm = () => { editingTileId = null; form.reset(); formTitle.textContent = 'Neuen Countdown hinzufügen'; formSubmitButton.textContent = 'Hinzufügen'; formDeleteButton.style.display = 'none'; formContainer.style.display = 'flex'; };
+            const openEditForm = (id) => { const item = countdownData.find(d => d.id === id); if (!item) return; editingTileId = id; form.reset(); formTitle.textContent = 'Countdown bearbeiten'; formSubmitButton.textContent = 'Speichern'; document.getElementById('form-name').value = item.name; document.getElementById('form-date').value = item.date; document.getElementById('form-message').value = item.message; formDeleteButton.style.display = 'block'; formContainer.style.display = 'flex'; };
+            const closeForm = () => { formContainer.style.display = 'none'; };
 
             const getNextBirthdayInfo = (dateString) => {
                 if (!dateString) return { timestamp: NaN };
                 const date = new Date(dateString);
                 const today = new Date();
+                // ***** HIER IST DIE KORREKTUR *****
+                // Setzt die Uhrzeit von "heute" auf Mitternacht, um nur den Tag zu vergleichen.
+                today.setHours(0, 0, 0, 0);
                 const currentYear = today.getFullYear();
                 let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
-                if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); }
+                if (nextBirthday < today) {
+                    nextBirthday.setFullYear(currentYear + 1);
+                }
                 return { timestamp: nextBirthday.getTime() };
             };
 
@@ -175,14 +145,11 @@
                     const id = parseInt(tile.dataset.id);
                     const item = countdownData.find(d => d.id === id);
                     if (!item || !item.nextBirthdayInfo) return;
-
                     const now = new Date().getTime();
                     const distance = item.nextBirthdayInfo.timestamp - now;
                     if (isNaN(distance)) return;
-
                     const oneDayInMs = 24 * 60 * 60 * 1000;
                     if (distance < -oneDayInMs) { renderAllTiles(); return; }
-
                     if (distance < 0) {
                         tile.classList.add('is-birthday');
                         birthdayIsHappening = true;
@@ -204,46 +171,18 @@
 
             addButton.addEventListener('click', openAddForm);
             formCancelButton.addEventListener('click', closeForm);
-
-            grid.addEventListener('click', (e) => {
-                const tile = e.target.closest('.countdown-tile');
-                if (tile) openEditForm(parseInt(tile.dataset.id));
-            });
-
-            grid.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                const tile = e.target.closest('.countdown-tile');
-                if (tile) openEditForm(parseInt(tile.dataset.id));
-            });
-
-            formDeleteButton.addEventListener('click', () => {
-                if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
-                    countdownData = countdownData.filter(item => item.id !== editingTileId);
-                    saveData();
-                    renderAllTiles();
-                    closeForm();
-                }
-            });
-
+            grid.addEventListener('click', (e) => { const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseInt(tile.dataset.id)); });
+            grid.addEventListener('contextmenu', (e) => { e.preventDefault(); const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseInt(tile.dataset.id)); });
+            formDeleteButton.addEventListener('click', () => { if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) { countdownData = countdownData.filter(item => item.id !== editingTileId); saveData(); renderAllTiles(); closeForm(); } });
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const name = document.getElementById('form-name').value;
                 const date = document.getElementById('form-date').value;
                 const message = document.getElementById('form-message').value;
                 if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
-
-                if (editingTileId) {
-                    const item = countdownData.find(d => d.id === editingTileId);
-                    if (item) { item.name = name; item.date = date; item.message = message; }
-                } else {
-                    countdownData.push({ id: Date.now(), name, date, message });
-                }
-                
-                saveData();
-                renderAllTiles();
-                closeForm();
+                if (editingTileId) { const item = countdownData.find(d => d.id === editingTileId); if (item) { item.name = name; item.date = date; item.message = message; } } else { countdownData.push({ id: Date.now(), name, date, message }); }
+                saveData(); renderAllTiles(); closeForm();
             });
-
             loadData();
             renderAllTiles();
             setInterval(updateAllTimers, 1000);
