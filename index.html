@@ -5,50 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Geburtstags-Dashboard</title>
     <style>
-        /* Grundlegende Stile */
+        /* CSS ist unverändert */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap');
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #0c001f; 
-            color: #ffffff; 
-            overflow-x: hidden;
-        }
-        
-        #fireworks-canvas { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: -1; 
-        }
-
-        #countdown-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .countdown-tile {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer; /* Zeigt an, dass man klicken kann */
-        }
-
-        .countdown-tile:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-
+        body { font-family: 'Poppins', sans-serif; background-color: #0c001f; color: #ffffff; overflow-x: hidden; }
+        #fireworks-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        #countdown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
+        .countdown-tile { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; text-align: center; backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; cursor: pointer; }
+        .countdown-tile:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
         .tile-name { font-size: 1.8rem; font-weight: 700; margin-bottom: 15px; }
         .tile-time { display: flex; justify-content: space-around; margin-bottom: 15px; }
         .tile-time .time-box { font-size: 1.5rem; font-weight: 500; }
@@ -57,10 +21,8 @@
         .countdown-tile.is-birthday { background: linear-gradient(45deg, #ff0077, #ff9100); transform: scale(1.05); box-shadow: 0 0 30px #ff0077; }
         .countdown-tile.is-birthday .tile-time { display: none; }
         .countdown-tile.is-birthday .tile-birthday-text { display: block; }
-        
         #add-new-button { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background-color: #8a2be2; color: white; border: none; border-radius: 50%; font-size: 2.5rem; line-height: 60px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.2s ease; z-index: 1001; }
         #add-new-button:hover { transform: scale(1.1); }
-        
         #add-form-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
         #add-form { background: #1a043a; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 400px; }
         #add-form h2 { margin-bottom: 10px; }
@@ -128,16 +90,13 @@
         const formDeleteButton = document.getElementById('form-delete');
 
         let countdownData = [];
-        let editingTileId = null; // Hält die ID der Kachel, die bearbeitet wird
+        let editingTileId = null;
 
         function loadData() {
             const data = localStorage.getItem('countdownDashboard');
             let rawData = data ? JSON.parse(data) : [];
             countdownData = rawData.map(item => {
-                if (item.birthDate && !item.date) {
-                    item.date = item.birthDate;
-                    delete item.birthDate;
-                }
+                if (item.birthDate && !item.date) { item.date = item.birthDate; delete item.birthDate; }
                 return item;
             });
         }
@@ -153,17 +112,13 @@
             const today = new Date();
             const currentYear = today.getFullYear();
             let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate());
-            if (nextBirthday < today) {
-                nextBirthday.setFullYear(currentYear + 1);
-            }
+            if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); }
             return { timestamp: nextBirthday.getTime() };
         }
 
-        // Öffnet das Formular im Bearbeitungsmodus
         function openEditForm(id) {
             const item = countdownData.find(d => d.id === id);
             if (!item) return;
-
             editingTileId = id;
             formTitle.textContent = 'Countdown bearbeiten';
             formSubmitButton.textContent = 'Speichern';
@@ -174,7 +129,6 @@
             formContainer.style.display = 'flex';
         }
 
-        // Setzt das Formular in den "Hinzufügen"-Modus zurück
         function resetForm() {
             editingTileId = null;
             form.reset();
@@ -191,94 +145,4 @@
             countdownData.forEach(item => {
                 const tileClone = tileTemplate.content.cloneNode(true);
                 const tileElement = tileClone.querySelector('.countdown-tile');
-                tileElement.dataset.id = item.id;
-                tileElement.querySelector('.tile-name').textContent = item.name;
-                tileElement.querySelector('.tile-birthday-text').textContent = item.message;
-                
-                // Rechtsklick-Event-Listener hinzufügen
-                tileElement.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    openEditForm(item.id);
-                });
-
-                grid.appendChild(tileClone);
-            });
-            updateAllTimers();
-        }
-
-        function updateAllTimers() {
-            let birthdayIsHappening = false;
-            document.querySelectorAll('.countdown-tile').forEach(tile => {
-                const id = parseInt(tile.dataset.id);
-                const item = countdownData.find(d => d.id === id);
-                if (!item || !item.nextBirthdayInfo) return;
-                const now = new Date().getTime();
-                const distance = item.nextBirthdayInfo.timestamp - now;
-                if (isNaN(distance)) return;
-                const oneDayInMs = 24 * 60 * 60 * 1000;
-                if (distance < -oneDayInMs) { saveAndRender(); return; }
-                if (distance < 0) {
-                    tile.classList.add('is-birthday');
-                    birthdayIsHappening = true;
-                } else {
-                    tile.classList.remove('is-birthday');
-                    const days = Math.floor(distance / oneDayInMs);
-                    const hours = Math.floor((distance % oneDayInMs) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                    tile.querySelector('.days').textContent = days;
-                    tile.querySelector('.hours').textContent = hours;
-                    tile.querySelector('.minutes').textContent = minutes;
-                    tile.querySelector('.seconds').textContent = seconds;
-                }
-            });
-            const newIntensity = birthdayIsHappening ? 400 : 1500;
-            if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
-        }
-
-        addButton.addEventListener('click', () => {
-            resetForm(); // Stellt sicher, dass das Formular im "Hinzufügen"-Modus ist
-            formContainer.style.display = 'flex';
-        });
-
-        formCancelButton.addEventListener('click', () => {
-            resetForm();
-        });
-
-        formDeleteButton.addEventListener('click', () => {
-            if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
-                countdownData = countdownData.filter(item => item.id !== editingTileId);
-                resetForm();
-                saveAndRender();
-            }
-        });
-
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('form-name').value;
-            const date = document.getElementById('form-date').value;
-            const message = document.getElementById('form-message').value;
-            if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
-
-            if (editingTileId) {
-                // Bearbeitungsmodus
-                const item = countdownData.find(d => d.id === editingTileId);
-                item.name = name;
-                item.date = date;
-                item.message = message;
-            } else {
-                // Hinzufügen-Modus
-                countdownData.push({ id: Date.now(), name, date, message });
-            }
-            
-            resetForm();
-            saveAndRender();
-        });
-
-        // Initialisierung
-        loadData();
-        renderAllTiles();
-        setInterval(updateAllTimers, 1000);
-    </script>
-</body>
-</html>
+                tileElement.
