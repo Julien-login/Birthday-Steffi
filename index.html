@@ -28,6 +28,7 @@
         #add-form { background: #1a043a; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 15px; width: 90%; max-width: 400px; }
         #add-form h2 { margin-bottom: 10px; }
         #add-form label { font-size: 0.9rem; opacity: 0.8; }
+        #add-form p.info { font-size: 0.75rem; opacity: 0.6; margin-top: -10px; }
         #add-form input, #add-form hr { margin-bottom: 5px; }
         #add-form input { width: 100%; padding: 12px; border: 1px solid #8a2be2; background: rgba(0,0,0,0.2); color: white; border-radius: 8px; font-family: inherit; }
         #add-form input[type="file"] { padding: 5px; }
@@ -37,7 +38,6 @@
         #add-form button[type="button"] { background-color: #444; color: white; }
         #add-form button.delete-button { background-color: #c00; color: white; display: none; }
         #add-form button:hover { opacity: 0.9; }
-        /* NEU: Stil für den Download-Link */
         #download-template-link { font-size: 0.8rem; color: #a26eff; text-decoration: none; text-align: right; display: block; margin-top: -10px; }
         #download-template-link:hover { text-decoration: underline; }
     </style>
@@ -47,18 +47,19 @@
     <main id="countdown-grid"></main>
     <button id="add-new-button">+</button>
     <div id="add-form-container">
-        <form id="add-form" onsubmit="return false;">
+        <form id="add-form">
             <h2 id="form-title">Neuen Countdown hinzufügen</h2>
-            <input type="text" id="form-name" placeholder="Name">
+            <input type="text" id="form-name" placeholder="Name" required>
             <label for="form-date">Geburtstag (Tag & Monat)</label>
-            <input type="date" id="form-date">
-            <input type="text" id="form-message" placeholder="Text am Geburtstag">
+            <input type="date" id="form-date" required>
+            <input type="text" id="form-message" placeholder="Text am Geburtstag" required>
             <div class="form-buttons">
                 <button type="submit" id="form-submit-button">Hinzufügen</button>
                 <button type="button" id="form-delete" class="delete-button">Löschen</button>
             </div>
             <hr>
-            <label for="csv-upload">Oder mehrere auf einmal hochladen (CSV-Datei):</label>
+            <label for="csv-upload">Oder mehrere auf einmal hochladen (CSV)</label>
+            <p class="info">Benötigtes Format: Spalten `Name,Datum,Nachricht` mit Datum als `JJJJ-MM-TT`.</p>
             <input type="file" id="csv-upload" accept=".csv">
             <a href="#" id="download-template-link">Vorlage herunterladen</a>
             <button type="button" id="form-cancel" style="margin-top: 15px;">Abbrechen</button>
@@ -86,7 +87,7 @@
             const formSubmitButton = document.getElementById('form-submit-button');
             const formDeleteButton = document.getElementById('form-delete');
             const csvUploadInput = document.getElementById('csv-upload');
-            const downloadTemplateLink = document.getElementById('download-template-link'); // NEU
+            const downloadTemplateLink = document.getElementById('download-template-link');
             let countdownData = [];
             let editingTileId = null;
 
@@ -98,37 +99,43 @@
             const getNextBirthdayInfo = (dateString) => { if (!dateString) return { timestamp: NaN }; const date = new Date(dateString); const today = new Date(); today.setHours(0, 0, 0, 0); const currentYear = today.getFullYear(); let nextBirthday = new Date(currentYear, date.getMonth(), date.getDate()); if (nextBirthday < today) { nextBirthday.setFullYear(currentYear + 1); } return { timestamp: nextBirthday.getTime() }; };
             const renderAllTiles = () => { countdownData.forEach(item => item.nextBirthdayInfo = getNextBirthdayInfo(item.date)); countdownData.sort((a, b) => a.nextBirthdayInfo.timestamp - b.nextBirthdayInfo.timestamp); grid.innerHTML = ''; countdownData.forEach(item => { const tileClone = tileTemplate.content.cloneNode(true); const tileElement = tileClone.querySelector('.countdown-tile'); tileElement.dataset.id = item.id; tileElement.querySelector('.tile-name').textContent = item.name; tileElement.querySelector('.tile-birthday-text').textContent = item.message; grid.appendChild(tileElement); }); updateAllTimers(); };
             const updateAllTimers = () => { let birthdayIsHappening = false; document.querySelectorAll('.countdown-tile').forEach(tile => { const id = parseInt(tile.dataset.id); const item = countdownData.find(d => d.id === id); if (!item || !item.nextBirthdayInfo) return; const now = new Date().getTime(); const distance = item.nextBirthdayInfo.timestamp - now; if (isNaN(distance)) return; const oneDayInMs = 864e5; if (distance < -oneDayInMs) { renderAllTiles(); return; } if (distance < 0) { tile.classList.add('is-birthday'); birthdayIsHappening = true; } else { tile.classList.remove('is-birthday'); const days = Math.floor(distance / oneDayInMs); const hours = Math.floor((distance % oneDayInMs) / 36e5); const minutes = Math.floor((distance % 36e5) / 6e4); const seconds = Math.floor((distance % 6e4) / 1e3); tile.querySelector('.days').textContent = days; tile.querySelector('.hours').textContent = hours; tile.querySelector('.minutes').textContent = minutes; tile.querySelector('.seconds').textContent = seconds; } }); const newIntensity = birthdayIsHappening ? 400 : 1500; if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); } };
-            
-            // --- NEU: Logik für den Download der CSV-Vorlage ---
-            const handleTemplateDownload = (e) => {
-                e.preventDefault();
-                const csvContent = "Name,Datum,Nachricht\n";
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.setAttribute("href", url);
-                link.setAttribute("download", "geburtstage-vorlage.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
 
+            const handleTemplateDownload = (e) => { e.preventDefault(); const csvContent = "Name,Datum,Nachricht\nBeispiel Name,1995-06-23,Beispiel Nachricht\n"; const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", "geburtstage-vorlage.csv"); link.style.visibility = 'hidden'; document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+            
+            // --- KORRIGIERTE CSV-UPLOAD-LOGIK ---
             const handleCsvUpload = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
+
                 Papa.parse(file, {
                     header: true, skipEmptyLines: true,
                     complete: (results) => {
                         const requiredFields = ['Name', 'Datum']; const actualFields = results.meta.fields.map(f => f.trim());
                         if (!requiredFields.every(f => actualFields.includes(f))) { alert(`Fehler: Die CSV-Datei muss die Spalten "Name" und "Datum" enthalten.\nGefunden wurden: ${actualFields.join(', ')}`); return; }
+                        
+                        let importedCount = 0;
+                        let skippedCount = 0;
                         results.data.forEach(row => {
                             const name = row.Name ? row.Name.trim() : '';
                             const date = row.Datum ? row.Datum.trim() : '';
                             const message = row.Nachricht ? row.Nachricht.trim() : `Happy Birthday, ${name}!`;
-                            if (name && date) { countdownData.push({ id: Date.now() + Math.random(), name: name, date: date, message: message }); }
+                            
+                            // Wichtige Prüfung auf korrektes Datumsformat
+                            if (name && date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                                countdownData.push({ id: Date.now() + Math.random(), name, date, message });
+                                importedCount++;
+                            } else {
+                                skippedCount++;
+                                console.warn(`Zeile übersprungen wegen fehlender Daten oder falschem Datumsformat (benötigt: JJJJ-MM-TT):`, row);
+                            }
                         });
-                        saveData(); renderAllTiles(); closeForm(); alert(`${results.data.length} Einträge erfolgreich importiert!`);
+                        
+                        saveData(); renderAllTiles(); closeForm();
+                        let alertMessage = `${importedCount} Einträge erfolgreich importiert!`;
+                        if (skippedCount > 0) {
+                            alertMessage += `\n${skippedCount} Zeilen wurden übersprungen, da das Datumsformat falsch war oder Daten fehlten.`;
+                        }
+                        alert(alertMessage);
                     },
                     error: (error) => { alert('Fehler beim Lesen der Datei: ' + error.message); }
                 });
@@ -137,15 +144,18 @@
             addButton.addEventListener('click', openAddForm);
             formCancelButton.addEventListener('click', closeForm);
             csvUploadInput.addEventListener('change', handleCsvUpload);
-            downloadTemplateLink.addEventListener('click', handleTemplateDownload); // NEU
+            downloadTemplateLink.addEventListener('click', handleTemplateDownload);
             grid.addEventListener('click', (e) => { const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseInt(tile.dataset.id)); });
             grid.addEventListener('contextmenu', (e) => { e.preventDefault(); const tile = e.target.closest('.countdown-tile'); if (tile) openEditForm(parseInt(tile.dataset.id)); });
             formDeleteButton.addEventListener('click', () => { if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) { countdownData = countdownData.filter(item => item.id !== editingTileId); saveData(); renderAllTiles(); closeForm(); } });
+            
+            // --- KORRIGIERTER SUBMIT-HANDLER ---
             form.addEventListener('submit', (e) => {
+                e.preventDefault(); // Verhindert Neuladen der Seite
                 const name = document.getElementById('form-name').value;
                 const date = document.getElementById('form-date').value;
                 const message = document.getElementById('form-message').value;
-                if (!name || !date) { return; }
+                if (!name || !date) { alert("Bitte fülle mindestens Name und Datum aus."); return; }
                 if (editingTileId) { const item = countdownData.find(d => d.id === editingTileId); if (item) { item.name = name; item.date = date; item.message = message || `Happy Birthday, ${name}!`; } } else { countdownData.push({ id: Date.now(), name, date, message: message || `Happy Birthday, ${name}!` }); }
                 saveData(); renderAllTiles(); closeForm();
             });
