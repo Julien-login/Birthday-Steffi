@@ -116,10 +116,21 @@
             return { timestamp: nextBirthday.getTime() };
         }
 
+        // --- NEUE, SAUBERE FUNKTIONEN FÜR DAS FORMULAR ---
+        function openAddForm() {
+            editingTileId = null;
+            form.reset();
+            formTitle.textContent = 'Neuen Countdown hinzufügen';
+            formSubmitButton.textContent = 'Hinzufügen';
+            formDeleteButton.style.display = 'none';
+            formContainer.style.display = 'flex';
+        }
+        
         function openEditForm(id) {
             const item = countdownData.find(d => d.id === id);
             if (!item) return;
             editingTileId = id;
+            form.reset();
             formTitle.textContent = 'Countdown bearbeiten';
             formSubmitButton.textContent = 'Speichern';
             document.getElementById('form-name').value = item.name;
@@ -129,12 +140,7 @@
             formContainer.style.display = 'flex';
         }
 
-        function resetForm() {
-            editingTileId = null;
-            form.reset();
-            formTitle.textContent = 'Neuen Countdown hinzufügen';
-            formSubmitButton.textContent = 'Hinzufügen';
-            formDeleteButton.style.display = 'none';
+        function closeForm() {
             formContainer.style.display = 'none';
         }
 
@@ -145,4 +151,88 @@
             countdownData.forEach(item => {
                 const tileClone = tileTemplate.content.cloneNode(true);
                 const tileElement = tileClone.querySelector('.countdown-tile');
-                tileElement.
+                tileElement.dataset.id = item.id;
+                tileElement.querySelector('.tile-name').textContent = item.name;
+                tileElement.querySelector('.tile-birthday-text').textContent = item.message;
+                grid.appendChild(tileClone);
+            });
+            updateAllTimers();
+        }
+
+        function updateAllTimers() {
+            let birthdayIsHappening = false;
+            document.querySelectorAll('.countdown-tile').forEach(tile => {
+                const id = parseInt(tile.dataset.id);
+                const item = countdownData.find(d => d.id === id);
+                if (!item || !item.nextBirthdayInfo) return;
+                const now = new Date().getTime();
+                const distance = item.nextBirthdayInfo.timestamp - now;
+                if (isNaN(distance)) return;
+                const oneDayInMs = 24 * 60 * 60 * 1000;
+                if (distance < -oneDayInMs) { saveAndRender(); return; }
+                if (distance < 0) {
+                    tile.classList.add('is-birthday');
+                    birthdayIsHappening = true;
+                } else {
+                    tile.classList.remove('is-birthday');
+                    const days = Math.floor(distance / oneDayInMs);
+                    const hours = Math.floor((distance % oneDayInMs) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    tile.querySelector('.days').textContent = days;
+                    tile.querySelector('.hours').textContent = hours;
+                    tile.querySelector('.minutes').textContent = minutes;
+                    tile.querySelector('.seconds').textContent = seconds;
+                }
+            });
+            const newIntensity = birthdayIsHappening ? 400 : 1500;
+            if (newIntensity !== fireworksIntensity) { fireworksIntensity = newIntensity; setFireworksInterval(); }
+        }
+
+        // --- EVENT LISTENERS ---
+        grid.addEventListener('click', (e) => {
+            const tile = e.target.closest('.countdown-tile');
+            if (tile) { openEditForm(parseInt(tile.dataset.id)); }
+        });
+        grid.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const tile = e.target.closest('.countdown-tile');
+            if (tile) { openEditForm(parseInt(tile.dataset.id)); }
+        });
+        
+        addButton.addEventListener('click', openAddForm);
+        formCancelButton.addEventListener('click', closeForm);
+
+        formDeleteButton.addEventListener('click', () => {
+            if (editingTileId && confirm('Diesen Countdown wirklich löschen?')) {
+                countdownData = countdownData.filter(item => item.id !== editingTileId);
+                closeForm();
+                saveAndRender();
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('form-name').value;
+            const date = document.getElementById('form-date').value;
+            const message = document.getElementById('form-message').value;
+            if (!name || !date || !message) { alert('Bitte alle Felder ausfüllen!'); return; }
+
+            if (editingTileId) {
+                const item = countdownData.find(d => d.id === editingTileId);
+                item.name = name; item.date = date; item.message = message;
+            } else {
+                countdownData.push({ id: Date.now(), name, date, message });
+            }
+            
+            closeForm();
+            saveAndRender();
+        });
+
+        // Initialisierung
+        loadData();
+        renderAllTiles();
+        setInterval(updateAllTimers, 1000);
+    </script>
+</body>
+</html>
